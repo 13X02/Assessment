@@ -1,11 +1,9 @@
 package com.example.assessment.controller;
 
+import com.example.assessment.dto.*;
 import com.example.assessment.model.OptionModel;
 import com.example.assessment.model.SetInfo;
 import com.example.assessment.service.AssessmentService;
-import com.example.assessment.dto.ResponseQuestionDto;
-import com.example.assessment.dto.ResponseSetDto;
-import com.example.assessment.dto.SetDto;
 import com.example.assessment.model.Question;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +29,7 @@ public class AssessmentController {
         return ResponseEntity.ok(assessmentService.getAllSet());
     }
     @PostMapping
-    public ResponseEntity<ResponseSetDto> createAssessment(@RequestBody SetInfo fullResponse) {
+    public ResponseEntity<ResponseSetDto> createAssessment(@RequestBody RequestSetDto fullResponse) {
         return new ResponseEntity<>(assessmentService.saveSetInfo(fullResponse), HttpStatus.CREATED);
     }
     @GetMapping("/{setname}")
@@ -40,7 +38,7 @@ public class AssessmentController {
     }
 
     @PutMapping("/{setId}/{questionId}")
-    public ResponseEntity<ResponseQuestionDto> updateQuestionInAssessment(@PathVariable Integer setId, @PathVariable Integer questionId, @RequestBody List<OptionModel> optionModels) {
+    public ResponseEntity<ResponseQuestionDto> updateQuestionInAssessment(@PathVariable Integer setId, @PathVariable Integer questionId, @RequestBody List<RequestAnswerDto> optionModels) {
 
         return ResponseEntity.ok(assessmentService.modifySetQuestionInfo(setId, questionId,optionModels));
     }

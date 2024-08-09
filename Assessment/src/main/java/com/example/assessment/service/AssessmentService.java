@@ -1,12 +1,9 @@
 package com.example.assessment.service;
 
+import com.example.assessment.dto.*;
 import com.example.assessment.repository.AnswerRepository;
 import com.example.assessment.repository.QuestionRepository;
 import com.example.assessment.repository.SetInfoRepository;
-import com.example.assessment.dto.ResponseAnswerDto;
-import com.example.assessment.dto.ResponseQuestionDto;
-import com.example.assessment.dto.ResponseSetDto;
-import com.example.assessment.dto.SetDto;
 import com.example.assessment.exception.QuestionIdNotFoundException;
 import com.example.assessment.exception.SetIdNotFoundException;
 import com.example.assessment.exception.SetNameNotFoundException;
@@ -16,6 +13,8 @@ import com.example.assessment.model.SetInfo;
 import com.example.assessment.model.SetStatus;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -94,8 +93,28 @@ public class AssessmentService {
             throw new SetNameNotFoundException(setname);
         }
     }
-    public ResponseSetDto saveSetInfo(SetInfo setInfo) {
+    public ResponseSetDto saveSetInfo(RequestSetDto setDto) {
+        SetInfo setInfo =new SetInfo();
+        setInfo.setSetName(setDto.getSetName());
+        setInfo.setCreatedBy("Admin");
         setInfo.setStatus(SetStatus.PENDING);
+        setInfo.setDomain(setDto.getDomain());
+        List<Question> questions = new ArrayList<>();
+        for (RequestQuestionDto question : setDto.getQuestions()) {
+            Question questionQuestion = new Question();
+            questionQuestion.setQuestionText(question.getQuestionText());
+            List<OptionModel> optionModels = new ArrayList<>();
+            for (RequestAnswerDto answer : question.getAnswers()){
+                OptionModel optionModel = new OptionModel();
+                optionModel.setAnswer(answer.getAnswer());
+                optionModel.setSuggestion(answer.getSuggestion());
+                optionModels.add(optionModel);
+            }
+            questionQuestion.setAnswers(optionModels);
+            questions.add(questionQuestion);
+
+        }
+        setInfo.setQuestions(questions);
         for (Question question : setInfo.getQuestions()) {
             for (OptionModel answer : question.getAnswers()) {
                 answerRepository.save(answer);
@@ -130,12 +149,23 @@ public class AssessmentService {
         );
     }
 
-    public ResponseQuestionDto modifySetQuestionInfo(Integer setId, Integer questionId, List<OptionModel> options) {
+    public ResponseQuestionDto modifySetQuestionInfo(Integer setId, Integer questionId, List<RequestAnswerDto> options) {
+
 
         Optional<SetInfo> setInfo = setInfoRepository.findById(setId);
+
         Optional<Question> currentQuestion = questionRepository.findById(questionId);
         if (currentQuestion.isPresent() && setInfo.isPresent()){
-            currentQuestion.get().setAnswers(options);
+
+            setInfo.get().setModifiedAt(new Timestamp(System.currentTimeMillis()));
+            List<OptionModel> optionsList = new ArrayList<>();
+            for (RequestAnswerDto answer:options){
+                OptionModel optionModel = new OptionModel();
+                optionModel.setAnswer(answer.getAnswer());
+                optionModel.setSuggestion(answer.getSuggestion());
+                optionsList.add(optionModel);
+            }
+            currentQuestion.get().setAnswers(optionsList);
             ResponseQuestionDto question = mapQuestionToDto(questionRepository.save(currentQuestion.get()),setId);
             return question;
 
